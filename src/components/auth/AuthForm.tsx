@@ -1,10 +1,9 @@
 "use client"
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { ArrowRight, Lock, Mail, Loader2 } from 'lucide-react';
+import { useAuth } from '@/firebase';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AuthForm() {
@@ -13,7 +12,7 @@ export default function AuthForm() {
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<'login' | 'forgot'>('login');
   const { toast } = useToast();
-  const router = useRouter();
+  const auth = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +21,6 @@ export default function AuthForm() {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/');
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -77,7 +75,7 @@ export default function AuthForm() {
         <h1 className="text-white text-xl font-bold mb-6 text-center">Восстановление</h1>
         <form onSubmit={handleForgotPassword} className="signin-form">
           <input
-            type="text"
+            type="email"
             placeholder="Ваш Email"
             className="signin-input rounded-lg"
             value={email}
@@ -107,7 +105,7 @@ export default function AuthForm() {
       <h1 className="text-white text-xl font-bold mb-6 text-center">Вход в систему</h1>
       <form onSubmit={handleLogin} className="signin-form">
         <input
-          type="text"
+          type="email"
           placeholder="Email"
           className="signin-input rounded-t-lg border-b border-[#34383D]"
           value={email}

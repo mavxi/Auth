@@ -1,40 +1,33 @@
 "use client"
 
-import { useEffect, useState } from 'react';
-import { onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { useUser, useDoc, useFirestore, useAuth, useMemoFirebase } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { doc } from 'firebase/firestore';
 import AuthForm from '@/components/auth/AuthForm';
 import { LogOut, User as UserIcon, Mail, Loader2 } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 
 export default function Home() {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+  const auth = useAuth();
+  
+  // Memoize the profile document reference based on the authenticated user
+  const profileDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    // Path: /user_profiles/{userId}
+    return doc(firestore, 'user_profiles', user.uid);
+  }, [user, firestore]);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        if (userDoc.exists()) {
-          setProfile(userDoc.data());
-        }
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  // Subscribe to the user's profile document
+  const { data: profile, isLoading: isProfileLoading } = useDoc(profileDocRef);
 
   const handleLogout = () => {
     signOut(auth);
   };
 
-  if (loading) {
+  // Show loading state while checking auth status
+  if (isUserLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-[#34383D]">
         <Loader2 className="animate-spin text-[#007EA5]" size={40} />
@@ -54,7 +47,9 @@ export default function Home() {
             </div>
             
             <h2 className="text-2xl font-bold text-center mb-2">Добро пожаловать</h2>
-            <p className="text-[#6F7787] text-center mb-8">{profile?.fullName || user.email}</p>
+            <p className="text-[#6F7787] text-center mb-8">
+              {isProfileLoading ? "Загрузка профиля..." : (profile?.fullName || user.email)}
+            </p>
 
             <div className="space-y-4">
               <div className="flex items-center gap-4 p-4 rounded-lg bg-[#34383D]">
