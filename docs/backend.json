@@ -1,0 +1,57 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user's profile information, typically stored in a database like Firestore and linked to an external authentication system (e.g., Firebase Authentication). This entity stores non-authentication-sensitive user details.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity. This typically corresponds to the user's authentication ID (e.g., Firebase Auth UID) provided by the external authentication system. (Primary Key)"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "The user's full name (ФИО)."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address. This email is used for login and contact, and it should match the email registered with the authentication system.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "fullName",
+        "email"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/user_profiles/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores individual user profile data. Each document's ID corresponds to the Firebase Authentication User ID (UID) of the user. Includes denormalized 'id' field for direct authorization matching.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to their Firebase Authentication UID."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The recommended Firestore structure for the AuthFlow application focuses on simplicity, security, and adherence to Firebase's best practices, particularly regarding authentication. Given the single entity `UserProfile` and the core feature of managing user profiles tied to Firebase Authentication, a single top-level collection is proposed.\n\n**Authorization Independence (CRITICAL):** The structure achieves authorization independence by storing each user's `UserProfile` document at the path `/user_profiles/{userId}`, where `{userId}` is the Firebase Authentication User ID (UID). The document's `id` field within the `UserProfile` entity also matches this `userId`. This design ensures that authorization rules can directly compare `request.auth.uid` with the document's ID (or the `id` field within the document) without needing `get()` operations to fetch parent documents. For instance, a rule like `allow read, write: if request.auth.uid == userId;` is sufficient and atomic, minimizing complexity and improving debuggability.\n\n**Querying for Authorization Purposes (QAPs):** This structure supports QAP-compliant `get` and `list` operations for individual users. Since each `UserProfile` document is designed to be owned and managed by its corresponding user, a user will typically `get` their *own* profile using their `uid`. For example, `db.collection('user_profiles').doc(firebase.auth().currentUser.uid).get()`. Firebase Security Rules would enforce that `request.auth.uid` must match `userId`. A `list` operation by a user can only query for their own profile (if specific query filters are applied to match `userId` to `request.auth.uid`), or it would be denied if attempting to list all profiles without proper authorization. This ensures that security rules are not used as filters and prevent over-fetching or unauthorized access to other users' private data. If public profile data were ever needed, a separate, distinct collection (e.g., `/public_user_profiles`) would be created to ensure structural segregation and a homogeneous security posture, allowing for secure `list` operations on publicly available data without compromising private information.\n\n**Regarding Password Storage:** It is crucial to note that user passwords, even hashed, **must not** be stored in Firestore. Firebase Authentication securely handles user credentials (email and password) independently. The `UserProfile` entity in Firestore should only store public or semi-private profile data, like `fullName` and `email`, that doesn't involve authentication secrets. The provided `UserProfile` schema correctly omits password fields, aligning with this security best practice."
+  }
+}
