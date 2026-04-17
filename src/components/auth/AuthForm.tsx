@@ -1,18 +1,28 @@
+
 "use client"
 
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { useAuth } from '@/firebase';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  sendPasswordResetEmail 
+} from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { useAuth, useFirestore } from '@/firebase';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function AuthForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState<'login' | 'forgot'>('login');
+  const [view, setView] = useState<'login' | 'signup' | 'forgot'>('login');
   const { toast } = useToast();
   const auth = useAuth();
+  const db = useFirestore();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +36,48 @@ export default function AuthForm() {
         variant: "destructive",
         title: "Ошибка авторизации",
         description: "Неверная почта или пароль."
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password || !fullName) return;
+
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Create profile document in Firestore (non-blocking as per guidelines)
+      const profileData = {
+        id: user.uid,
+        fullName: fullName,
+        email: email,
+      };
+
+      const docRef = doc(db, 'user_profiles', user.uid);
+      setDoc(docRef, profileData)
+        .catch(async (error) => {
+          const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'create',
+            requestResourceData: profileData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        });
+
+      toast({
+        title: "Успех",
+        description: "Аккаунт успешно создан!"
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка регистрации",
+        description: error.message || "Не удалось создать аккаунт."
       });
     } finally {
       setLoading(false);
@@ -102,12 +154,24 @@ export default function AuthForm() {
 
   return (
     <div className="auth-wrapper">
-      <h1 className="text-white text-xl font-bold mb-6 text-center">Вход в систему</h1>
-      <form onSubmit={handleLogin} className="signin-form">
+      <h1 className="text-white text-xl font-bold mb-6 text-center">
+        {view === 'login' ? 'Вход в систему' : 'Регистрация'}
+      </h1>
+      <form onSubmit={view === 'login' ? handleLogin : handleSignUp} className="signin-form">
+        {view === 'signup' && (
+          <input
+            type="text"
+            placeholder="Полное имя"
+            className="signin-input rounded-t-lg border-b border-[#34383D]"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+          />
+        )}
         <input
           type="email"
           placeholder="Email"
-          className="signin-input rounded-t-lg border-b border-[#34383D]"
+          className={`signin-input ${view === 'login' ? 'rounded-t-lg' : ''} border-b border-[#34383D]`}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -125,14 +189,22 @@ export default function AuthForm() {
         </button>
       </form>
       
-      <div className="mt-4 px-5 flex flex-col gap-1">
-        <p className="text-[#4F5561] font-bold text-xs">
+      <div className="mt-4 px-5 flex flex-col gap-2">
+        <p className="text-[#4F5561] font-bold text-xs flex justify-between">
           <button 
-            onClick={() => setView('forgot')}
+            onClick={() => setView(view === 'login' ? 'signup' : 'login')}
             className="text-[#6F7787] hover:border-b border-[#6F7787] transition-all"
           >
-            Забыли пароль?
+            {view === 'login' ? 'Создать аккаунт' : 'Уже есть аккаунт?'}
           </button>
+          {view === 'login' && (
+            <button 
+              onClick={() => setView('forgot')}
+              className="text-[#6F7787] hover:border-b border-[#6F7787] transition-all"
+            >
+              Забыли пароль?
+            </button>
+          )}
         </p>
       </div>
 
