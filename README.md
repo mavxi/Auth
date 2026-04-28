@@ -2,6 +2,12 @@
 
 This is a modern Next.js project featuring a secure authentication flow integrated with Firebase (Authentication and Firestore).
 
+## Технологический стек (Tech Stack)
+
+1. **Язык программирования (Backend):** TypeScript (Next.js Server Actions & Firebase SDK)
+2. **База данных:** Firebase Firestore
+3. **Frontend:** React, Next.js (App Router), TypeScript, Tailwind CSS, ShadCN UI
+
 ## Features
 
 - **Email/Password Authentication**: Login, Sign-up, and Password Reset.
@@ -40,6 +46,6 @@ To update your GitHub repository with the latest changes, run these commands in 
 
 ```bash
 git add .
-git commit -m "Integrate Google Auth and Firebase Firestore profiles"
+git commit -m "Update project documentation and tech stack details"
 git push origin main
 ```
