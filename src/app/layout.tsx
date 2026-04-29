@@ -5,6 +5,9 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 export const metadata: Metadata = {
   title: 'AuthFlow - Secure Login',
   description: 'Secure authentication flow with Firebase',
+  icons: {
+    icon: 'https://picsum.photos/seed/auth-icon/32/32', // Replace this URL with your desired icon path
+  },
 };
 
 export default function RootLayout({
