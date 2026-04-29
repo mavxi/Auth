@@ -16,6 +16,15 @@ This is a modern Next.js project featuring a secure authentication flow integrat
 - **Modern UI**: Built with ShadCN UI, Tailwind CSS, and Lucide icons.
 - **GenAI Ready**: Integrated with Genkit for future AI features.
 
+## How to View Your Data (Database)
+
+To view the database tables (collections) and entries (documents):
+
+1.  Open the [Firebase Console](https://console.firebase.google.com/).
+2.  Select your project: **studio-9702333801-bf1fb**.
+3.  In the left-hand menu, go to **Build** > **Firestore Database**.
+4.  You will see a collection named `user_profiles`. Clicking on it will reveal all registered users and their profile details (Full Name, Email, ID).
+
 ## Setup Instructions
 
 1. **Clone the repository**:
@@ -46,6 +55,6 @@ To update your GitHub repository with the latest changes, run these commands in 
 
 ```bash
 git add .
-git commit -m "Update project documentation and tech stack details"
+git commit -m "Update project documentation with database management instructions"
 git push origin main
 ```
