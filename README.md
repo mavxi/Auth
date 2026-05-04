@@ -18,6 +18,7 @@ This is a modern Next.js project featuring a secure authentication flow integrat
 - **Email/Password Authentication**: Login, Sign-up, and Password Reset.
 - **Google Authentication**: Seamless sign-in using Google accounts.
 - **Reactive User Profiles**: User data is synchronized and stored in Firestore.
+- **Math CAPTCHA**: Secure verification for all auth forms.
 - **Modern UI**: Built with ShadCN UI, Tailwind CSS, and Lucide icons.
 
 ## How to View Your Data (Database)
@@ -26,6 +27,26 @@ This is a modern Next.js project featuring a secure authentication flow integrat
 2. Select your project: **studio-9702333801-bf1fb**.
 3. Go to **Build** > **Firestore Database**.
 4. Collection `user_profiles`: Contains user details (Full Name, Email, UID).
+
+## Git Commands
+
+### First Time Setup
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/mavxi/Auth.git
+git branch -M main
+git push -u origin main
+```
+
+### How to Update GitHub (After changes)
+Run these commands whenever you want to push your latest work:
+```bash
+git add .
+git commit -m "Describe your changes here"
+git push origin main
+```
 
 ## Setup Instructions
 
