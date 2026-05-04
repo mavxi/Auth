@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -11,7 +11,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -22,13 +22,43 @@ export default function AuthForm() {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<'login' | 'signup' | 'forgot'>('login');
+  
+  // CAPTCHA State
+  const [captcha, setCaptcha] = useState({ a: 0, b: 0, result: 0 });
+  const [captchaInput, setCaptchaInput] = useState('');
+  
   const { toast } = useToast();
   const auth = useAuth();
   const db = useFirestore();
 
+  const generateCaptcha = () => {
+    const a = Math.floor(Math.random() * 10) + 1;
+    const b = Math.floor(Math.random() * 10) + 1;
+    setCaptcha({ a, b, result: a + b });
+    setCaptchaInput('');
+  };
+
+  useEffect(() => {
+    generateCaptcha();
+  }, [view]);
+
+  const validateCaptcha = () => {
+    if (parseInt(captchaInput) !== captcha.result) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка CAPTCHA",
+        description: "Пожалуйста, решите пример правильно."
+      });
+      generateCaptcha();
+      return false;
+    }
+    return true;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
+    if (!validateCaptcha()) return;
 
     setLoading(true);
     try {
@@ -39,6 +69,7 @@ export default function AuthForm() {
         title: "Ошибка авторизации",
         description: "Неверная почта или пароль."
       });
+      generateCaptcha();
     } finally {
       setLoading(false);
     }
@@ -47,6 +78,7 @@ export default function AuthForm() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !fullName) return;
+    if (!validateCaptcha()) return;
 
     setLoading(true);
     try {
@@ -80,6 +112,7 @@ export default function AuthForm() {
         title: "Ошибка регистрации",
         description: error.message || "Не удалось создать аккаунт."
       });
+      generateCaptcha();
     } finally {
       setLoading(false);
     }
@@ -99,7 +132,6 @@ export default function AuthForm() {
       };
 
       const docRef = doc(db, 'user_profiles', user.uid);
-      // Upsert profile data on login
       setDoc(docRef, profileData, { merge: true })
         .catch(async (error) => {
           const permissionError = new FirestorePermissionError({
@@ -137,6 +169,7 @@ export default function AuthForm() {
       });
       return;
     }
+    if (!validateCaptcha()) return;
 
     setLoading(true);
     try {
@@ -152,10 +185,40 @@ export default function AuthForm() {
         title: "Ошибка",
         description: "Пользователь не найден."
       });
+      generateCaptcha();
     } finally {
       setLoading(false);
     }
   };
+
+  const CaptchaField = () => (
+    <div className="mt-4 mb-2 p-3 bg-[#34383D]/30 rounded-lg border border-[#4F5561]/20">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[10px] text-[#6F7787] font-bold uppercase tracking-widest">Проверка (CAPTCHA)</p>
+        <button 
+          type="button" 
+          onClick={generateCaptcha}
+          className="text-[#007EA5] hover:rotate-180 transition-transform duration-500"
+          title="Обновить"
+        >
+          <RefreshCw size={14} />
+        </button>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="flex-1 text-center font-bold text-lg bg-[#1C1E21] py-2 rounded border border-[#34383D] select-none">
+          {captcha.a} + {captcha.b} =
+        </div>
+        <input
+          type="number"
+          placeholder="?"
+          className="w-16 h-[46px] bg-[#1C1E21] border border-[#34383D] rounded-md text-center font-bold text-white focus:outline-none focus:border-[#007EA5] transition-colors"
+          value={captchaInput}
+          onChange={(e) => setCaptchaInput(e.target.value)}
+          required
+        />
+      </div>
+    </div>
+  );
 
   if (view === 'forgot') {
     return (
@@ -165,11 +228,12 @@ export default function AuthForm() {
           <input
             type="email"
             placeholder="Ваш Email"
-            className="signin-input rounded-lg"
+            className="signin-input rounded-lg mb-2"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
+          <CaptchaField />
           <button type="submit" className="signin-submit" disabled={loading}>
             {loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={25} />}
           </button>
@@ -189,7 +253,7 @@ export default function AuthForm() {
   }
 
   return (
-    <div className="auth-wrapper">
+    <div className="auth-wrapper !mt-[-140px]">
       <h1 className="text-white text-xl font-bold mb-6 text-center">
         {view === 'login' ? 'Вход в систему' : 'Регистрация'}
       </h1>
@@ -220,12 +284,15 @@ export default function AuthForm() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <button type="submit" className="signin-submit" disabled={loading}>
+        
+        <CaptchaField />
+
+        <button type="submit" className="signin-submit !top-[auto] !bottom-[-26px] !right-[50%] !translate-x-[50%]" disabled={loading}>
           {loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={25} />}
         </button>
       </form>
       
-      <div className="mt-4 px-5 flex flex-col gap-2">
+      <div className="mt-12 px-5 flex flex-col gap-2">
         <p className="text-[#4F5561] font-bold text-xs flex justify-between">
           <button 
             onClick={() => setView(view === 'login' ? 'signup' : 'login')}
@@ -244,7 +311,7 @@ export default function AuthForm() {
         </p>
       </div>
 
-      <button onClick={handleGoogleLogin} className="social-login-btn" disabled={loading}>
+      <button onClick={handleGoogleLogin} className="social-login-btn mt-6" disabled={loading}>
         <svg viewBox="0 0 24 24" className="w-5 h-5">
           <path fill="#4285F4" d="M23.745 12.27c0-.79-.07-1.54-.19-2.27h-11.3v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"/>
           <path fill="#34A853" d="M12.255 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96h-3.98v3.09c1.97 3.92 6.02 6.62 10.71 6.62z"/>
