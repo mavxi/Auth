@@ -5,55 +5,51 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserProfile",
       "type": "object",
-      "description": "Represents a user's profile information. This entity stores non-sensitive user details. IMPORTANT: Passwords are managed by Firebase Authentication and are NEVER stored here.",
+      "description": "Represents a user's profile information.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "The unique Firebase Authentication UID for the user. This is NOT a password or hash. (Primary Key)"
-        },
-        "fullName": {
-          "type": "string",
-          "description": "The user's full name."
-        },
-        "email": {
-          "type": "string",
-          "description": "The user's email address.",
-          "format": "email"
-        }
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "email": { "type": "string", "format": "email" }
       },
-      "required": [
-        "id",
-        "fullName",
-        "email"
-      ]
+      "required": ["id", "fullName", "email"]
+    },
+    "Student": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string", "description": "The owner of this student record" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "name"]
+    },
+    "Subscription": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "type": { "type": "string", "description": "e.g., Yoga, Karate" },
+        "sessionsTotal": { "type": "integer" },
+        "sessionsUsed": { "type": "integer" },
+        "price": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "expired", "completed"] }
+      },
+      "required": ["userId", "studentId", "sessionsTotal", "sessionsUsed"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous",
-      "google.com"
-    ]
+    "providers": ["password", "google.com"]
   },
   "firestore": {
     "structure": [
-      {
-        "path": "/user_profiles/{userId}",
-        "definition": {
-          "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "Stores individual user profile data. Each document's ID corresponds to the Firebase Authentication User ID (UID).",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user (UID)."
-            }
-          ]
-        }
-      }
+      { "path": "/user_profiles/{userId}", "definition": { "entityName": "UserProfile" } },
+      { "path": "/students/{studentId}", "definition": { "entityName": "Student" } },
+      { "path": "/subscriptions/{subscriptionId}", "definition": { "entityName": "Subscription" } }
     ],
-    "reasoning": "The structure uses the Firebase UID as the document ID for absolute authorization security. This ensures that users can only access their own data via rules like 'allow read: if request.auth.uid == userId'. Passwords are explicitly excluded as they are handled by the Firebase Auth service."
+    "reasoning": "Standard user-owned data structure. All documents include a userId field for security filtering."
   }
 }

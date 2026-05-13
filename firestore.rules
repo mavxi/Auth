@@ -1,86 +1,30 @@
 
-/**
- * Firestore Security Rules
- *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model. The system is designed around the 
- * principle that users should have full control over their own profile data while being 
- * strictly prohibited from accessing or modifying the profiles of other users.
- *
- * Data Structure:
- * All user profile data is stored in a top-level collection: `/user_profiles/{userId}`.
- * The document ID (`userId`) is designed to match the Firebase Authentication UID, 
- * creating a direct link between the authenticated identity and the data record.
- *
- * Key Security Decisions:
- * - User Listing: Listing of the `user_profiles` collection is restricted. A user can 
- *   only perform a 'list' operation that targets their own specific document.
- * - Relational Integrity: To ensure data consistency, the internal `id` field of a 
- *   UserProfile document must match the document ID (the UID) upon creation and 
- *   remain immutable thereafter.
- * - Private by Default: No public access is permitted. All read and write operations 
- *   require a valid Firebase Authentication session.
- *
- * Denormalization for Authorization:
- * The `id` field is stored directly within the `UserProfile` document. This allows 
- * rules to verify that the data being written contains the correct identifier 
- * matching the user's authenticated UID without performing additional document lookups.
- */
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /** 
-     * Global Helper Functions 
-     */
-
-    /** Checks if the request is made by an authenticated user. */
     function isSignedIn() {
       return request.auth != null;
     }
-
-    /** Checks if the authenticated user's UID matches the provided userId. */
+    
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** Verifies ownership and ensures the document exists for state-changing operations. */
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
-    /**
-     * @description Rules for the UserProfile collection, ensuring users manage only their own data.
-     * @path /user_profiles/{userId}
-     * @allow (create) User 'abc' creates a document at /user_profiles/abc where data.id == 'abc'.
-     * @deny (get) User 'abc' attempts to read /user_profiles/xyz.
-     * @principle Restricts access to a user's own data tree and validates relational integrity.
-     */
     match /user_profiles/{userId} {
-      
-      // Read Operations
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-
-      // Write Operations
-      
-      /**
-       * Prototyping Note: We validate the 'id' field to ensure it matches the path.
-       * We do not validate 'fullName' or 'email' types to allow for rapid iteration.
-       */
+      allow get, list: if isOwner(userId);
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      
-      /**
-       * Ensures the document exists, the user is the owner, and the 'id' field 
-       * remains immutable to prevent profile hijacking or data corruption.
-       */
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      
-      allow delete: if isExistingOwner(userId);
+      allow update: if isOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isOwner(userId);
     }
 
-    // Default deny for any unspecified paths
+    match /students/{studentId} {
+      allow read, write: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid) && (request.resource == null || request.resource.data.userId == request.auth.uid);
+    }
+
+    match /subscriptions/{subscriptionId} {
+      allow read, write: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid) && (request.resource == null || request.resource.data.userId == request.auth.uid);
+    }
+
     match /{path=**} {
       allow read, write: if false;
     }
