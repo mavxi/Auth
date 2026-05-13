@@ -26,12 +26,13 @@ This is a modern Next.js project featuring a secure authentication flow integrat
 The app is built using **reCAPTCHA v2**. Follow these exact steps:
 1. Go to [Google reCAPTCHA Admin Console](https://www.google.com/recaptcha/admin).
 2. Click "+" to create a new site.
-3. **reCAPTCHA type**: Select **reCAPTCHA v2** and then **"I'm not a robot" Checkbox**. (v3 will NOT work with current code).
-4. **Domains**: Add these three domains exactly as shown:
+3. **Label**: Enter a descriptive name like `AuthFlow` or `studio-9702333801-bf1fb`.
+4. **reCAPTCHA type**: Select **reCAPTCHA v2** and then **"I'm not a robot" Checkbox**. (v3 will NOT work with current code).
+5. **Domains**: Add these three domains exactly as shown (one per line):
    - `localhost`
    - `studio-9702333801-bf1fb.firebaseapp.com`
    - `studio-9702333801-bf1fb.web.app`
-5. Copy your **Site Key** and replace the one in `src/components/auth/AuthForm.tsx`.
+6. Copy your **Site Key** and replace the one in `src/components/auth/AuthForm.tsx`.
 
 ## How to View Your Data (Database)
 
