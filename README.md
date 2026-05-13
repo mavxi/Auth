@@ -41,13 +41,22 @@ To use your own reCAPTCHA keys:
 
 ## Git Commands
 
-### How to Update GitHub (After changes)
-Run these commands whenever you want to push your latest work:
+### How to Update GitHub (Pushing your local changes)
+Run these commands whenever you want to push your latest work to GitHub:
 ```bash
 git add .
 git commit -m "Describe your changes here"
 git push origin main
 ```
+
+### How to Sync Your Computer (Pulling changes from GitHub)
+If you made changes on another computer or directly on GitHub, run this to get them on your local machine:
+```bash
+git pull origin main
+```
+
+### What is a Pull Request?
+A **Pull Request (PR)** is created on the GitHub website (not in the terminal). It is used to propose changes from one branch to another, allowing for code review before merging.
 
 ### First Time Setup
 ```bash
