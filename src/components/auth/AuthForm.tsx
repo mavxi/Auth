@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -11,10 +11,11 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
-import { ArrowRight, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import ReCAPTCHA from "react-google-recaptcha";
 
 export default function AuthForm() {
   const [email, setEmail] = useState('');
@@ -24,32 +25,24 @@ export default function AuthForm() {
   const [view, setView] = useState<'login' | 'signup' | 'forgot'>('login');
   
   // CAPTCHA State
-  const [captcha, setCaptcha] = useState({ a: 0, b: 0, result: 0 });
-  const [captchaInput, setCaptchaInput] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
   
   const { toast } = useToast();
   const auth = useAuth();
   const db = useFirestore();
 
-  const generateCaptcha = () => {
-    const a = Math.floor(Math.random() * 10) + 1;
-    const b = Math.floor(Math.random() * 10) + 1;
-    setCaptcha({ a, b, result: a + b });
-    setCaptchaInput('');
+  const handleCaptchaChange = (token: string | null) => {
+    setCaptchaToken(token);
   };
 
-  useEffect(() => {
-    generateCaptcha();
-  }, [view]);
-
   const validateCaptcha = () => {
-    if (parseInt(captchaInput) !== captcha.result) {
+    if (!captchaToken) {
       toast({
         variant: "destructive",
-        title: "Ошибка CAPTCHA",
-        description: "Пожалуйста, решите пример правильно."
+        title: "Проверка не пройдена",
+        description: "Пожалуйста, подтвердите, что вы не робот."
       });
-      generateCaptcha();
       return false;
     }
     return true;
@@ -69,7 +62,8 @@ export default function AuthForm() {
         title: "Ошибка авторизации",
         description: "Неверная почта или пароль."
       });
-      generateCaptcha();
+      recaptchaRef.current?.reset();
+      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -112,7 +106,8 @@ export default function AuthForm() {
         title: "Ошибка регистрации",
         description: error.message || "Не удалось создать аккаунт."
       });
-      generateCaptcha();
+      recaptchaRef.current?.reset();
+      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -185,38 +180,21 @@ export default function AuthForm() {
         title: "Ошибка",
         description: "Пользователь не найден."
       });
-      generateCaptcha();
+      recaptchaRef.current?.reset();
+      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const CaptchaField = () => (
-    <div className="mt-4 mb-2 p-3 bg-[#34383D]/30 rounded-lg border border-[#4F5561]/20">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px] text-[#6F7787] font-bold uppercase tracking-widest">Проверка (CAPTCHA)</p>
-        <button 
-          type="button" 
-          onClick={generateCaptcha}
-          className="text-[#007EA5] hover:rotate-180 transition-transform duration-500"
-          title="Обновить"
-        >
-          <RefreshCw size={14} />
-        </button>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="flex-1 text-center font-bold text-lg bg-[#1C1E21] py-2 rounded border border-[#34383D] select-none">
-          {captcha.a} + {captcha.b} =
-        </div>
-        <input
-          type="number"
-          placeholder="?"
-          className="w-16 h-[46px] bg-[#1C1E21] border border-[#34383D] rounded-md text-center font-bold text-white focus:outline-none focus:border-[#007EA5] transition-colors"
-          value={captchaInput}
-          onChange={(e) => setCaptchaInput(e.target.value)}
-          required
-        />
-      </div>
+  const GoogleCaptcha = () => (
+    <div className="mt-6 mb-8 flex justify-center">
+      <ReCAPTCHA
+        ref={recaptchaRef}
+        sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Google Test Site Key
+        onChange={handleCaptchaChange}
+        theme="dark"
+      />
     </div>
   );
 
@@ -233,7 +211,7 @@ export default function AuthForm() {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <CaptchaField />
+          <GoogleCaptcha />
           <button type="submit" className="signin-submit" disabled={loading}>
             {loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={25} />}
           </button>
@@ -253,7 +231,7 @@ export default function AuthForm() {
   }
 
   return (
-    <div className="auth-wrapper !mt-[-140px]">
+    <div className="auth-wrapper !mt-[-160px]">
       <h1 className="text-white text-xl font-bold mb-6 text-center">
         {view === 'login' ? 'Вход в систему' : 'Регистрация'}
       </h1>
@@ -285,14 +263,14 @@ export default function AuthForm() {
           required
         />
         
-        <CaptchaField />
+        <GoogleCaptcha />
 
         <button type="submit" className="signin-submit !top-[auto] !bottom-[-26px] !right-[50%] !translate-x-[50%]" disabled={loading}>
           {loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={25} />}
         </button>
       </form>
       
-      <div className="mt-12 px-5 flex flex-col gap-2">
+      <div className="mt-14 px-5 flex flex-col gap-2">
         <p className="text-[#4F5561] font-bold text-xs flex justify-between">
           <button 
             onClick={() => setView(view === 'login' ? 'signup' : 'login')}
