@@ -18,19 +18,20 @@ This is a modern Next.js project featuring a secure authentication flow integrat
 - **Email/Password Authentication**: Login, Sign-up, and Password Reset.
 - **Google Authentication**: Seamless sign-in using Google accounts.
 - **Reactive User Profiles**: User data is synchronized and stored in Firestore.
-- **Google reCAPTCHA**: Secure bot protection on all auth forms.
+- **Google reCAPTCHA v2**: Secure bot protection with the "I'm not a robot" checkbox.
 - **Modern UI**: Built with ShadCN UI, Tailwind CSS, and Lucide icons.
 
-## Google reCAPTCHA Setup
+## Google reCAPTCHA Setup (CRITICAL)
 
-To use your own reCAPTCHA keys:
+The app is built using **reCAPTCHA v2**. Follow these exact steps:
 1. Go to [Google reCAPTCHA Admin Console](https://www.google.com/recaptcha/admin).
-2. Choose **reCAPTCHA v2 ("I'm not a robot" Checkbox)**.
-3. Add these **Domains**:
+2. Click "+" to create a new site.
+3. **reCAPTCHA type**: Select **reCAPTCHA v2** and then **"I'm not a robot" Checkbox**. (v3 will NOT work with current code).
+4. Add these **Domains**:
    - `localhost`
    - `studio-9702333801-bf1fb.firebaseapp.com`
    - `studio-9702333801-bf1fb.web.app`
-4. Copy your **Site Key** and replace the one in `src/components/auth/AuthForm.tsx`.
+5. Copy your **Site Key** and replace the one in `src/components/auth/AuthForm.tsx`.
 
 ## How to View Your Data (Database)
 
@@ -41,7 +42,7 @@ To use your own reCAPTCHA keys:
 
 ## Git Commands
 
-### How to Update GitHub (Pushing your local changes)
+### How to Update GitHub (Pushing your latest changes)
 Run these commands whenever you want to push your latest work to GitHub:
 ```bash
 git add .
@@ -57,16 +58,6 @@ git pull origin main
 
 ### What is a Pull Request?
 A **Pull Request (PR)** is created on the GitHub website (not in the terminal). It is used to propose changes from one branch to another, allowing for code review before merging.
-
-### First Time Setup
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git remote add origin https://github.com/mavxi/Auth.git
-git branch -M main
-git push -u origin main
-```
 
 ## Setup Instructions
 

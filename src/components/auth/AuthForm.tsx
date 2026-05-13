@@ -41,7 +41,7 @@ export default function AuthForm() {
       toast({
         variant: "destructive",
         title: "Проверка не пройдена",
-        description: "Пожалуйста, подтвердите, что вы не робот."
+        description: "Пожалуйста, подтвердите, что вы не робот (reCAPTCHA v2)."
       });
       return false;
     }
