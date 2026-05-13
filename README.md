@@ -34,6 +34,13 @@ The app is built using **reCAPTCHA v2**. Follow these exact steps:
    - `studio-9702333801-bf1fb.web.app`
 6. Copy your **Site Key** and replace the one in `src/components/auth/AuthForm.tsx`.
 
+### Troubleshooting: "Timeout (b)" Error
+If you see "reCAPTCHA Timeout (b)":
+1. **Check Key Version**: Ensure you selected "v2 Checkbox" in the Google console. A v3 key will cause this error.
+2. **Check Domains**: Make sure `localhost` and your Firebase domains are authorized in the Google console.
+3. **Browser Extensions**: Some ad-blockers can interfere with the Google script. Try disabling them or using Incognito mode.
+4. **Refresh**: Sometimes the Google script fails to initialize on the first try in development; a simple browser refresh often fixes it.
+
 ## How to View Your Data (Database)
 
 1. Open the [Firebase Console](https://console.firebase.google.com/).

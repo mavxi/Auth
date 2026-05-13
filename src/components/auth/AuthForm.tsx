@@ -187,16 +187,11 @@ export default function AuthForm() {
     }
   };
 
-  const GoogleCaptcha = () => (
-    <div className="mt-6 mb-8 flex justify-center">
-      <ReCAPTCHA
-        ref={recaptchaRef}
-        sitekey="6LfQrOcsAAAAAEk_eTaWJLSapFxNwrc-2HIsHyaZ"
-        onChange={handleCaptchaChange}
-        theme="dark"
-      />
-    </div>
-  );
+  const handleViewChange = (newView: 'login' | 'signup' | 'forgot') => {
+    setView(newView);
+    setCaptchaToken(null);
+    recaptchaRef.current?.reset();
+  };
 
   if (view === 'forgot') {
     return (
@@ -211,7 +206,15 @@ export default function AuthForm() {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <GoogleCaptcha />
+          <div className="mt-6 mb-8 flex justify-center">
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey="6LfQrOcsAAAAAEk_eTaWJLSapFxNwrc-2HIsHyaZ"
+              onChange={handleCaptchaChange}
+              onExpired={() => setCaptchaToken(null)}
+              theme="dark"
+            />
+          </div>
           <button type="submit" className="signin-submit" disabled={loading}>
             {loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={25} />}
           </button>
@@ -219,7 +222,7 @@ export default function AuthForm() {
         <div className="mt-4 px-5">
           <p className="text-[#4F5561] font-bold text-xs">
             <button 
-              onClick={() => setView('login')}
+              onClick={() => handleViewChange('login')}
               className="text-[#6F7787] hover:border-b border-[#6F7787] transition-all"
             >
               Вернуться к входу
@@ -263,7 +266,15 @@ export default function AuthForm() {
           required
         />
         
-        <GoogleCaptcha />
+        <div className="mt-6 mb-8 flex justify-center">
+          <ReCAPTCHA
+            ref={recaptchaRef}
+            sitekey="6LfQrOcsAAAAAEk_eTaWJLSapFxNwrc-2HIsHyaZ"
+            onChange={handleCaptchaChange}
+            onExpired={() => setCaptchaToken(null)}
+            theme="dark"
+          />
+        </div>
 
         <button type="submit" className="signin-submit !top-[auto] !bottom-[-26px] !right-[50%] !translate-x-[50%]" disabled={loading}>
           {loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={25} />}
@@ -273,14 +284,14 @@ export default function AuthForm() {
       <div className="mt-14 px-5 flex flex-col gap-2">
         <p className="text-[#4F5561] font-bold text-xs flex justify-between">
           <button 
-            onClick={() => setView(view === 'login' ? 'signup' : 'login')}
+            onClick={() => handleViewChange(view === 'login' ? 'signup' : 'login')}
             className="text-[#6F7787] hover:border-b border-[#6F7787] transition-all"
           >
             {view === 'login' ? 'Создать аккаунт' : 'Уже есть аккаунт?'}
           </button>
           {view === 'login' && (
             <button 
-              onClick={() => setView('forgot')}
+              onClick={() => handleViewChange('forgot')}
               className="text-[#6F7787] hover:border-b border-[#6F7787] transition-all"
             >
               Забыли пароль?
