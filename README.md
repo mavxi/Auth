@@ -27,7 +27,7 @@ The app is built using **reCAPTCHA v2**. Follow these exact steps:
 1. Go to [Google reCAPTCHA Admin Console](https://www.google.com/recaptcha/admin).
 2. Click "+" to create a new site.
 3. **reCAPTCHA type**: Select **reCAPTCHA v2** and then **"I'm not a robot" Checkbox**. (v3 will NOT work with current code).
-4. Add these **Domains**:
+4. **Domains**: Add these three domains exactly as shown:
    - `localhost`
    - `studio-9702333801-bf1fb.firebaseapp.com`
    - `studio-9702333801-bf1fb.web.app`
