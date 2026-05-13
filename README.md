@@ -18,8 +18,19 @@ This is a modern Next.js project featuring a secure authentication flow integrat
 - **Email/Password Authentication**: Login, Sign-up, and Password Reset.
 - **Google Authentication**: Seamless sign-in using Google accounts.
 - **Reactive User Profiles**: User data is synchronized and stored in Firestore.
-- **Math CAPTCHA**: Secure verification for all auth forms.
+- **Google reCAPTCHA**: Secure bot protection on all auth forms.
 - **Modern UI**: Built with ShadCN UI, Tailwind CSS, and Lucide icons.
+
+## Google reCAPTCHA Setup
+
+To use your own reCAPTCHA keys:
+1. Go to [Google reCAPTCHA Admin Console](https://www.google.com/recaptcha/admin).
+2. Choose **reCAPTCHA v2 ("I'm not a robot" Checkbox)**.
+3. Add these **Domains**:
+   - `localhost`
+   - `studio-9702333801-bf1fb.firebaseapp.com`
+   - `studio-9702333801-bf1fb.web.app`
+4. Copy your **Site Key** and replace the one in `src/components/auth/AuthForm.tsx`.
 
 ## How to View Your Data (Database)
 
@@ -30,6 +41,14 @@ This is a modern Next.js project featuring a secure authentication flow integrat
 
 ## Git Commands
 
+### How to Update GitHub (After changes)
+Run these commands whenever you want to push your latest work:
+```bash
+git add .
+git commit -m "Describe your changes here"
+git push origin main
+```
+
 ### First Time Setup
 ```bash
 git init
@@ -38,14 +57,6 @@ git commit -m "Initial commit"
 git remote add origin https://github.com/mavxi/Auth.git
 git branch -M main
 git push -u origin main
-```
-
-### How to Update GitHub (After changes)
-Run these commands whenever you want to push your latest work:
-```bash
-git add .
-git commit -m "Describe your changes here"
-git push origin main
 ```
 
 ## Setup Instructions
