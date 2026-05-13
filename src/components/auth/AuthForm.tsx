@@ -191,7 +191,7 @@ export default function AuthForm() {
     <div className="mt-6 mb-8 flex justify-center">
       <ReCAPTCHA
         ref={recaptchaRef}
-        sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Google Test Site Key
+        sitekey="6LfQrOcsAAAAAEk_eTaWJLSapFxNwrc-2HIsHyaZ"
         onChange={handleCaptchaChange}
         theme="dark"
       />
