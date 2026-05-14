@@ -15,7 +15,6 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import ReCAPTCHA from "react-google-recaptcha";
 
 export default function AuthForm() {
   const [email, setEmail] = useState('');
@@ -24,27 +23,12 @@ export default function AuthForm() {
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<'login' | 'signup' | 'forgot'>('login');
   
-  // CAPTCHA State
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const recaptchaRef = useRef<ReCAPTCHA>(null);
-  
   const { toast } = useToast();
   const auth = useAuth();
   const db = useFirestore();
 
-  const handleCaptchaChange = (token: string | null) => {
-    setCaptchaToken(token);
-  };
-
+  // CAPTCHA Placeholder logic - always returns true for testing
   const validateCaptcha = () => {
-    if (!captchaToken) {
-      toast({
-        variant: "destructive",
-        title: "Проверка не пройдена",
-        description: "Пожалуйста, подтвердите, что вы не робот (reCAPTCHA v2)."
-      });
-      return false;
-    }
     return true;
   };
 
@@ -62,8 +46,6 @@ export default function AuthForm() {
         title: "Ошибка авторизации",
         description: "Неверная почта или пароль."
       });
-      recaptchaRef.current?.reset();
-      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -106,8 +88,6 @@ export default function AuthForm() {
         title: "Ошибка регистрации",
         description: error.message || "Не удалось создать аккаунт."
       });
-      recaptchaRef.current?.reset();
-      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -180,8 +160,6 @@ export default function AuthForm() {
         title: "Ошибка",
         description: "Пользователь не найден."
       });
-      recaptchaRef.current?.reset();
-      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -189,9 +167,13 @@ export default function AuthForm() {
 
   const handleViewChange = (newView: 'login' | 'signup' | 'forgot') => {
     setView(newView);
-    setCaptchaToken(null);
-    recaptchaRef.current?.reset();
   };
+
+  const CaptchaPlaceholder = () => (
+    <div className="mt-6 mb-8 flex justify-center p-4 border border-dashed border-[#4F5561] rounded text-[#4F5561] text-xs font-bold bg-[#1C1E21]/50">
+      CAPTCHA (ОТКЛЮЧЕНО ДЛЯ ТЕСТОВ)
+    </div>
+  );
 
   if (view === 'forgot') {
     return (
@@ -206,15 +188,7 @@ export default function AuthForm() {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <div className="mt-6 mb-8 flex justify-center">
-            <ReCAPTCHA
-              ref={recaptchaRef}
-              sitekey="6LfQrOcsAAAAAEk_eTaWJLSapFxNwrc-2HIsHyaZ"
-              onChange={handleCaptchaChange}
-              onExpired={() => setCaptchaToken(null)}
-              theme="dark"
-            />
-          </div>
+          <CaptchaPlaceholder />
           <button type="submit" className="signin-submit" disabled={loading}>
             {loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={25} />}
           </button>
@@ -266,15 +240,7 @@ export default function AuthForm() {
           required
         />
         
-        <div className="mt-6 mb-8 flex justify-center">
-          <ReCAPTCHA
-            ref={recaptchaRef}
-            sitekey="6LfQrOcsAAAAAEk_eTaWJLSapFxNwrc-2HIsHyaZ"
-            onChange={handleCaptchaChange}
-            onExpired={() => setCaptchaToken(null)}
-            theme="dark"
-          />
-        </div>
+        <CaptchaPlaceholder />
 
         <button type="submit" className="signin-submit !top-[auto] !bottom-[-26px] !right-[50%] !translate-x-[50%]" disabled={loading}>
           {loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={25} />}
