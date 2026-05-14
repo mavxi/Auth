@@ -11,18 +11,32 @@ service cloud.firestore {
     }
 
     match /user_profiles/{userId} {
-      allow get, list: if isOwner(userId);
+      allow read: if isOwner(userId);
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId) && request.resource.data.id == resource.data.id;
+      allow update: if isOwner(userId);
       allow delete: if isOwner(userId);
     }
 
     match /students/{studentId} {
-      allow read, write: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid) && (request.resource == null || request.resource.data.userId == request.auth.uid);
+      // Allow reading only if the document belongs to the signed-in user
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      // Allow creation if the user sets themselves as the owner
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      
+      // Allow updates and deletes only if the user owns the record
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
     match /subscriptions/{subscriptionId} {
-      allow read, write: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid) && (request.resource == null || request.resource.data.userId == request.auth.uid);
+      // Allow reading only if the document belongs to the signed-in user
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      // Allow creation if the user sets themselves as the owner
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      
+      // Allow updates and deletes only if the user owns the record
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
     match /{path=**} {
