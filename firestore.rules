@@ -2,6 +2,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Utility functions
     function isSignedIn() {
       return request.auth != null;
     }
@@ -10,35 +11,36 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // User profiles: Only the owner can read or write their own profile
     match /user_profiles/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow read, write: if isOwner(userId);
     }
 
+    // Students collection: Users can only see and manage their own student records
     match /students/{studentId} {
-      // Allow reading only if the document belongs to the signed-in user
+      // Allow read if the existing document belongs to the user
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
       
-      // Allow creation if the user sets themselves as the owner
+      // Allow create if the user is assigning the record to themselves
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       
-      // Allow updates and deletes only if the user owns the record
+      // Allow update and delete if the user owns the document
       allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
+    // Subscriptions collection: Users can only see and manage their own subscriptions
     match /subscriptions/{subscriptionId} {
-      // Allow reading only if the document belongs to the signed-in user
+      // Allow read if the existing document belongs to the user
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
       
-      // Allow creation if the user sets themselves as the owner
+      // Allow create if the user is assigning the record to themselves
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       
-      // Allow updates and deletes only if the user owns the record
+      // Allow update and delete if the user owns the document
       allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
+    // Deny all other access by default
     match /{path=**} {
       allow read, write: if false;
     }
