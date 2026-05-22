@@ -1,9 +1,9 @@
 
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import {
   Dialog,
   DialogContent,
@@ -23,14 +23,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 interface SubscriptionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   students: any[];
+  subscription?: any;
 }
 
-export default function SubscriptionDialog({ open, onOpenChange, students }: SubscriptionDialogProps) {
+export default function SubscriptionDialog({ open, onOpenChange, students, subscription }: SubscriptionDialogProps) {
   const { user } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
@@ -39,6 +41,21 @@ export default function SubscriptionDialog({ open, onOpenChange, students }: Sub
   const [studentId, setStudentId] = useState('');
   const [type, setType] = useState('Общий');
   const [total, setTotal] = useState('8');
+  const [used, setUsed] = useState('0');
+
+  useEffect(() => {
+    if (subscription) {
+      setStudentId(subscription.studentId || '');
+      setType(subscription.type || 'Общий');
+      setTotal(String(subscription.sessionsTotal || '8'));
+      setUsed(String(subscription.sessionsUsed || '0'));
+    } else {
+      setStudentId('');
+      setType('Общий');
+      setTotal('8');
+      setUsed('0');
+    }
+  }, [subscription, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,19 +65,27 @@ export default function SubscriptionDialog({ open, onOpenChange, students }: Sub
 
     setLoading(true);
     try {
-      await addDoc(collection(db, 'subscriptions'), {
+      const data = {
         userId: user.uid,
         studentId,
         studentName: student?.name || 'Unknown',
         type,
         sessionsTotal: parseInt(total),
-        sessionsUsed: 0,
-        status: 'active',
-      });
-      toast({ title: "Абонемент создан" });
+        sessionsUsed: parseInt(used),
+        status: parseInt(used) >= parseInt(total) ? 'completed' : 'active',
+      };
+
+      if (subscription?.id) {
+        const subRef = doc(db, 'subscriptions', subscription.id);
+        updateDocumentNonBlocking(subRef, data);
+        toast({ title: "Абонемент обновлен" });
+      } else {
+        addDocumentNonBlocking(collection(db, 'subscriptions'), data);
+        toast({ title: "Абонемент создан" });
+      }
       onOpenChange(false);
     } catch (error) {
-      toast({ variant: "destructive", title: "Ошибка", description: "Не удалось создать абонемент." });
+      toast({ variant: "destructive", title: "Ошибка", description: "Не удалось сохранить абонемент." });
     } finally {
       setLoading(false);
     }
@@ -70,12 +95,12 @@ export default function SubscriptionDialog({ open, onOpenChange, students }: Sub
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-[#1C1E21] text-white border-white/10">
         <DialogHeader>
-          <DialogTitle>Новый абонемент</DialogTitle>
+          <DialogTitle>{subscription ? 'Редактировать абонемент' : 'Новый абонемент'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="space-y-2">
             <Label>Выберите ученика</Label>
-            <Select onValueChange={setStudentId} value={studentId}>
+            <Select onValueChange={setStudentId} value={studentId} disabled={!!subscription}>
               <SelectTrigger className="bg-[#34383D] border-white/5">
                 <SelectValue placeholder="Выберите из списка" />
               </SelectTrigger>
@@ -96,21 +121,33 @@ export default function SubscriptionDialog({ open, onOpenChange, students }: Sub
               required
             />
           </div>
-          <div className="space-y-2">
-            <Label>Кол-во занятий</Label>
-            <Input 
-              type="number"
-              value={total} 
-              onChange={e => setTotal(e.target.value)} 
-              className="bg-[#34383D] border-white/5"
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Всего занятий</Label>
+              <Input 
+                type="number"
+                value={total} 
+                onChange={e => setTotal(e.target.value)} 
+                className="bg-[#34383D] border-white/5"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Использовано</Label>
+              <Input 
+                type="number"
+                value={used} 
+                onChange={e => setUsed(e.target.value)} 
+                className="bg-[#34383D] border-white/5"
+                required
+              />
+            </div>
           </div>
           <DialogFooter className="pt-4">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Отмена</Button>
             <Button type="submit" className="bg-[#007EA5] hover:bg-[#007EA5]/90" disabled={loading || !studentId}>
               {loading && <Loader2 className="animate-spin mr-2" size={16} />}
-              Активировать
+              {subscription ? 'Сохранить' : 'Активировать'}
             </Button>
           </DialogFooter>
         </form>

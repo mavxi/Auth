@@ -25,6 +25,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import StudentDialog from './StudentDialog';
 import SubscriptionDialog from './SubscriptionDialog';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 type Section = 'overview' | 'students' | 'subscriptions';
 
@@ -37,6 +38,9 @@ export default function Dashboard() {
   const [activeSection, setActiveSection] = useState<Section>('overview');
   const [isStudentDialogOpen, setIsStudentDialogOpen] = useState(false);
   const [isSubDialogOpen, setIsSubDialogOpen] = useState(false);
+  
+  const [editingStudent, setEditingStudent] = useState<any>(null);
+  const [editingSubscription, setEditingSubscription] = useState<any>(null);
 
   // Queries
   const studentsQuery = useMemoFirebase(() => {
@@ -52,7 +56,7 @@ export default function Dashboard() {
   const { data: students, isLoading: loadingStudents } = useCollection(studentsQuery);
   const { data: subs, isLoading: loadingSubs } = useCollection(subsQuery);
 
-  const handleMarkAttendance = async (sub: any) => {
+  const handleMarkAttendance = (sub: any) => {
     if (sub.sessionsUsed >= sub.sessionsTotal) {
       toast({
         variant: "destructive",
@@ -62,23 +66,36 @@ export default function Dashboard() {
       return;
     }
 
-    try {
-      const subRef = doc(db, 'subscriptions', sub.id);
-      await updateDoc(subRef, {
-        sessionsUsed: sub.sessionsUsed + 1,
-        status: (sub.sessionsUsed + 1) === sub.sessionsTotal ? 'completed' : 'active'
-      });
-      toast({
-        title: "Отметка поставлена",
-        description: `Списано занятие для ${sub.studentName}. Осталось: ${sub.sessionsTotal - (sub.sessionsUsed + 1)}`
-      });
-    } catch (e) {
-      toast({
-        variant: "destructive",
-        title: "Ошибка",
-        description: "Не удалось обновить абонемент."
-      });
-    }
+    const subRef = doc(db, 'subscriptions', sub.id);
+    updateDocumentNonBlocking(subRef, {
+      sessionsUsed: sub.sessionsUsed + 1,
+      status: (sub.sessionsUsed + 1) === sub.sessionsTotal ? 'completed' : 'active'
+    });
+    
+    toast({
+      title: "Отметка поставлена",
+      description: `Списано занятие для ${sub.studentName}. Осталось: ${sub.sessionsTotal - (sub.sessionsUsed + 1)}`
+    });
+  };
+
+  const openEditStudent = (student: any) => {
+    setEditingStudent(student);
+    setIsStudentDialogOpen(true);
+  };
+
+  const openEditSub = (sub: any) => {
+    setEditingSubscription(sub);
+    setIsSubDialogOpen(true);
+  };
+
+  const handleAddStudent = () => {
+    setEditingStudent(null);
+    setIsStudentDialogOpen(true);
+  };
+
+  const handleAddSub = () => {
+    setEditingSubscription(null);
+    setIsSubDialogOpen(true);
   };
 
   return (
@@ -142,10 +159,10 @@ export default function Dashboard() {
             <p className="text-[#6F7787]">Добро пожаловать обратно, {user?.displayName || 'коллега'}.</p>
           </div>
           <div className="flex gap-3">
-            <Button onClick={() => setIsStudentDialogOpen(true)} variant="outline" className="border-white/10 hover:bg-white/5 text-white">
+            <Button onClick={handleAddStudent} variant="outline" className="border-white/10 hover:bg-white/5 text-white">
               <Plus className="mr-2" size={18} /> Ученик
             </Button>
-            <Button onClick={() => setIsSubDialogOpen(true)} className="bg-[#007EA5] hover:bg-[#007EA5]/90 text-white">
+            <Button onClick={handleAddSub} className="bg-[#007EA5] hover:bg-[#007EA5]/90 text-white">
               <Plus className="mr-2" size={18} /> Абонемент
             </Button>
           </div>
@@ -245,7 +262,12 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <Button variant="ghost" size="sm" className="text-[#6F7787] hover:text-[#007EA5]">
+                          <Button 
+                            onClick={() => openEditStudent(student)}
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-[#6F7787] hover:text-[#007EA5]"
+                          >
                             Детали
                           </Button>
                         </td>
@@ -288,7 +310,14 @@ export default function Dashboard() {
                     }`}>
                       {sub.status === 'active' ? 'Активен' : 'Завершен'}
                     </span>
-                    <Button variant="ghost" size="sm" className="text-[#6F7787] hover:text-white">Редактировать</Button>
+                    <Button 
+                      onClick={() => openEditSub(sub)}
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-[#6F7787] hover:text-white"
+                    >
+                      Редактировать
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -297,8 +326,17 @@ export default function Dashboard() {
         )}
 
         {/* Dialogs */}
-        <StudentDialog open={isStudentDialogOpen} onOpenChange={setIsStudentDialogOpen} />
-        <SubscriptionDialog open={isSubDialogOpen} onOpenChange={setIsSubDialogOpen} students={students || []} />
+        <StudentDialog 
+          open={isStudentDialogOpen} 
+          onOpenChange={setIsStudentDialogOpen} 
+          student={editingStudent} 
+        />
+        <SubscriptionDialog 
+          open={isSubDialogOpen} 
+          onOpenChange={setIsSubDialogOpen} 
+          students={students || []} 
+          subscription={editingSubscription}
+        />
       </main>
     </div>
   );
