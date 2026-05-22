@@ -8,6 +8,7 @@ This is a modern Next.js project featuring a secure authentication flow and a co
 1. **Backend:** TypeScript, Firebase Authentication, Firestore
 2. **Frontend:** React, Next.js (App Router), Tailwind CSS, ShadCN UI
 3. **Icons:** Lucide-React
+4. **Security:** Google reCAPTCHA v2
 
 ## Features
 
@@ -17,14 +18,17 @@ This is a modern Next.js project featuring a secure authentication flow and a co
 - **Dashboard Analytics**: Visual cards showing active status.
 - **Landing Page**: Professional intro for your business.
 
-## CAPTCHA (Status: TEMPORARILY DISABLED)
+## CAPTCHA Setup Instructions
 
-The Google reCAPTCHA has been temporarily replaced with a placeholder to allow for testing without a Site Key. 
-To enable it back later:
+To make the reCAPTCHA work:
 1. Register at [Google reCAPTCHA Admin Console](https://www.google.com/recaptcha/admin).
 2. Choose **reCAPTCHA v2 ("I'm not a robot" Checkbox)**.
-3. Add your domains (`localhost`, etc.).
-4. Re-install `react-google-recaptcha` and update `AuthForm.tsx`.
+3. Add these domains to the list:
+   - `localhost`
+   - `studio-9702333801-bf1fb.firebaseapp.com`
+   - `studio-9702333801-bf1fb.web.app`
+4. Copy your **Site Key**.
+5. Open `src/components/auth/AuthForm.tsx` and replace `YOUR_RECAPTCHA_SITE_KEY_HERE` with your key.
 
 ## How to View Your Data (Database)
 
@@ -38,16 +42,16 @@ To enable it back later:
 
 ## Git Commands
 
+### Sync Your Computer (Get changes from GitHub)
+```bash
+git pull origin main
+```
+
 ### Update GitHub (Push your changes)
 ```bash
 git add .
 git commit -m "Your description"
 git push origin main
-```
-
-### Sync Your Computer (Get changes from GitHub)
-```bash
-git pull origin main
 ```
 
 ## Setup Instructions
